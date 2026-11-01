@@ -571,6 +571,285 @@ $("grid").onclick = e=>{
 $("overlay").onclick = e=>{ if(e.target.id==="overlay") closeModal(); };
 document.addEventListener("keydown", e=>{ if(e.key==="Escape") closeModal(); });
 
+<!-- ===== ADD-ON: Protein Filter + Ingredient Swaps ===== -->
+<style>
+  .swapbtn{margin:24px 5px 0;background:rgba(255,255,255,.2);color:#fff;border:2px solid #fff;font-size:1rem;font-weight:700;padding:13px 22px;border-radius:999px;cursor:pointer}
+  .swapbtn:hover{background:rgba(255,255,255,.32)}
+  .swaps{background:#f6f0ff;border-left:4px solid #7b4fc9;padding:12px 14px;border-radius:8px;margin-top:14px;font-size:.92rem}
+  .swaps ul{margin:6px 0 0 18px}
+  .swaps li{margin:4px 0}
+  .swapmark{font-size:.72rem;background:#efe6ff;color:#5b2fa8;border-radius:999px;padding:1px 7px;margin-left:6px;font-weight:700;white-space:nowrap}
+  .guide-search{width:100%;padding:11px 14px;border:2px solid #f0e2d3;border-radius:12px;font-size:1rem;margin-bottom:12px;outline:none}
+  .guide-list{list-style:none}
+  .guide-list li{padding:10px 0;border-bottom:1px dashed #f0e2d3}
+  .guide-list b{color:#e4572e}
+  .chip small{opacity:.7}
+</style>
+<script>
+(function(){
+  // ================= 1. PROTEIN FILTER =================
+  const PROTEINS = [
+    ["chicken","🍗 Chicken"],["beef","🥩 Beef"],["lamb","🐑 Lamb"],["fish","🐟 Fish"],
+    ["shellfish","🦐 Shrimp & Seafood"],["eggs","🥚 Eggs"],["tofu","🥢 Tofu"],
+    ["legumes","🫘 Beans & Lentils"],["cheese","🧀 Cheese"],["veggie","🥕 Just Veggies"]
+  ];
+  const PROTEIN_MAP = {
+    "Chicken Parmigiana":["chicken"],
+    "Mushroom Risotto":["cheese"],
+    "Chicken Tinga Tacos":["chicken"],
+    "Black Bean & Sweet Potato Enchiladas":["legumes","cheese"],
+    "Chicken Teriyaki":["chicken"],
+    "Oyakodon (Chicken & Egg Rice Bowl)":["chicken","eggs"],
+    "Kung Pao Chicken":["chicken"],
+    "Mapo Tofu (with Beef)":["tofu","beef"],
+    "Butter Chicken (Murgh Makhani)":["chicken"],
+    "Chana Masala":["legumes"],
+    "Pad Thai":["shellfish","tofu","eggs"],
+    "Thai Green Curry":["chicken"],
+    "Sole Meunière":["fish"],
+    "Ratatouille":["veggie"],
+    "Chicken Souvlaki with Tzatziki":["chicken"],
+    "Spanakopita":["cheese","eggs"],
+    "Seafood Paella":["shellfish"],
+    "Tortilla Española":["eggs"],
+    "Bibimbap":["beef","eggs"],
+    "Kimchi Fried Rice":["beef","eggs"],
+    "Quick Beef Phở":["beef"],
+    "Bún Bò Nướng (Lemongrass Beef Noodle Bowl)":["beef"],
+    "Chicken Shawarma":["chicken"],
+    "Mujadara":["legumes"],
+    "Chicken Tagine with Lemon & Olives":["chicken"],
+    "Seven-Vegetable Couscous":["legumes"],
+    "Doro Wat":["chicken","eggs"],
+    "Misir Wat (Red Lentil Stew)":["legumes"],
+    "Classic Smash Burgers":["beef"],
+    "Baked Mac & Cheese":["cheese"],
+    "Moqueca (Fish Stew)":["fish"],
+    "Strogonoff de Frango (Chicken Strogonoff)":["chicken"],
+    "Lomo Saltado":["beef"],
+    "Classic Ceviche":["fish"],
+    "Menemen":["eggs"],
+    "Izgara Köfte (Grilled Meatballs)":["lamb","beef"],
+    "Jerk Chicken":["chicken"],
+    "Rice and Peas":["legumes"],
+    "Chicken Schnitzel with Potato Salad":["chicken"],
+    "Käsespätzle":["cheese","eggs"],
+    "Chicken Adobo":["chicken"],
+    "Pancit Bihon":["chicken","shellfish"],
+    "Nasi Goreng":["chicken","eggs"],
+    "Gado-Gado":["tofu","eggs"],
+    "Joojeh Kabab (Saffron Chicken)":["chicken"],
+    "Ghormeh Sabzi":["lamb","beef","legumes"],
+    "Fish and Chips":["fish"],
+    "Shepherd's Pie":["lamb","beef"],
+    "Jollof Rice":["veggie"],
+    "Beef Suya":["beef"]
+  };
+  // Automatic detection for any recipes you add yourself later
+  function guessProteins(r){
+    const t=(r.n+" "+r.ing.join(" ")).toLowerCase()
+      .replace(/(chicken|beef|vegetable|fish) (stock|broth|bouillon)|fish sauce|oyster sauce|bean sprouts|green beans|prawn crackers|shrimp paste/g,"");
+    const out=[];
+    if(/chicken/.test(t)) out.push("chicken");
+    if(/beef|veal/.test(t)) out.push("beef");
+    if(/lamb|mutton/.test(t)) out.push("lamb");
+    if(/\b(fish|cod|haddock|salmon|tuna|sole|tilapia|halibut|sea bass|trout)\b/.test(t)) out.push("fish");
+    if(/shrimp|prawn|mussel|clam|crab|lobster|scallop|squid/.test(t)) out.push("shellfish");
+    if(/\beggs?\b/.test(t)) out.push("eggs");
+    if(/tofu/.test(t)) out.push("tofu");
+    if(/beans?\b|lentil|chickpea|\bpeas\b/.test(t)) out.push("legumes");
+    if(/cheese|parmesan|mozzarella|feta|cheddar|paneer|halloumi/.test(t)) out.push("cheese");
+    return out.length?out:["veggie"];
+  }
+  const proteinsOf = r => PROTEIN_MAP[r.n] || guessProteins(r);
+  const selected = new Set();
+
+  // Hook into the existing filter
+  const baseFiltered = filtered;
+  filtered = function(){
+    const list = baseFiltered();
+    return selected.size ? list.filter(r=>proteinsOf(r).some(p=>selected.has(p))) : list;
+  };
+
+  // Build the protein buttons
+  const panel = document.querySelector(".panel");
+  const cuisineRow = $("cuisineChips").parentElement;
+  const row = document.createElement("div");
+  row.className = "row";
+  const chipsHTML = PROTEINS.map(([k,label])=>{
+    const n = RECIPES.filter(r=>proteinsOf(r).includes(k)).length;
+    return n ? `<span class="chip" data-p="${k}">${label} <small>(${n})</small></span>` : "";
+  }).join("");
+  row.innerHTML = `<span class="label">Protein:</span><div class="chips" id="proteinChips"><span class="chip on" data-p="ALL">🍽 Any</span>${chipsHTML}</div>`;
+  panel.insertBefore(row, cuisineRow);
+
+  $("proteinChips").onclick = e=>{
+    const c = e.target.closest(".chip"); if(!c) return;
+    const v = c.dataset.p, all = $("proteinChips").querySelector('[data-p="ALL"]');
+    if(v==="ALL"){
+      selected.clear();
+      $("proteinChips").querySelectorAll(".chip").forEach(x=>x.classList.remove("on"));
+      all.classList.add("on");
+    } else {
+      selected.has(v) ? selected.delete(v) : selected.add(v);
+      c.classList.toggle("on");
+      all.classList.toggle("on", selected.size===0);
+    }
+    render();
+  };
+
+  // ================= 2. INGREDIENT SWAPS =================
+  const SWAPS = [
+    [/arborio/,"Arborio rice","Any short-grain rice (sushi or Calrose rice). Stir often so it gets creamy."],
+    [/chipotle/,"Chipotle peppers in adobo","Per pepper: 1 tsp smoked paprika + a pinch of cayenne + 1 tsp tomato paste + a splash of vinegar."],
+    [/cotija/,"Cotija cheese","Crumbled feta, or finely grated Parmesan."],
+    [/\bcrema\b/,"Mexican crema","Sour cream thinned with a little lime juice or milk."],
+    [/enchilada sauce/,"Enchilada sauce","500 ml tomato sauce + 2 tbsp chili powder + 1 tsp cumin + ½ tsp garlic powder, simmered 5 min."],
+    [/monterey jack/,"Monterey Jack","Mild cheddar, mozzarella, or a mix of both."],
+    [/rice vinegar/,"Rice vinegar","Apple cider or white vinegar with a pinch of sugar. Use slightly less, since they're sharper."],
+    [/dashi/,"Dashi stock","Low-sodium halal chicken or vegetable stock + 1 tsp soy sauce."],
+    [/short-grain rice/,"Short-grain rice","Calrose or sushi rice. Long-grain rice works but is less sticky."],
+    [/sichuan pepper/,"Sichuan peppercorns","Freshly cracked black pepper + a pinch of ground coriander. You lose the tingle, but it still tastes great."],
+    [/dried red chil/,"Dried red chilies","1 tsp red pepper flakes."],
+    [/black vinegar|chinkiang/,"Chinkiang black vinegar","Rice or apple cider vinegar + ½ tsp soy sauce + a pinch of brown sugar."],
+    [/doubanjiang/,"Doubanjiang (chili bean paste)","Gochujang (check the label for alcohol) or sambal oelek, plus 1 tsp soy sauce."],
+    [/fermented black beans/,"Fermented black beans","1 tsp soy sauce, or just leave them out."],
+    [/silken tofu/,"Silken / soft tofu","Medium or firm tofu, cut into smaller cubes."],
+    [/kasoori methi|fenugreek/,"Dried fenugreek leaves (kasoori methi)","¼ tsp fenugreek seeds, toasted and crushed, or leave it out. Indian and Persian grocers sell the leaves cheaply."],
+    [/kashmiri/,"Kashmiri chili powder","3 parts paprika + 1 part cayenne (red colour with mild heat)."],
+    [/ginger-garlic paste/,"Ginger-garlic paste","Equal parts freshly grated ginger and minced garlic."],
+    [/amchur/,"Amchur (dry mango powder)","2 tsp lemon or lime juice per 1 tsp amchur, added at the end."],
+    [/garam masala/,"Garam masala","1 tsp cumin + 1 tsp coriander + ¼ tsp cinnamon + a pinch each of cloves, cardamom and black pepper."],
+    [/tamarind/,"Tamarind paste","For 3 tbsp: 2 tbsp lime juice + 1 tbsp brown sugar + 1 tsp ketchup."],
+    [/fish sauce/,"Fish sauce","The same amount of soy sauce plus a squeeze of lime."],
+    [/palm sugar/,"Palm sugar","Brown sugar."],
+    [/flat rice noodles/,"Flat rice noodles","Any rice noodles, or linguine (not gluten-free)."],
+    [/green curry paste/,"Green curry paste","Red or yellow curry paste makes a different but delicious curry (check labels for shrimp paste if avoiding shellfish)."],
+    [/kaffir lime/,"Kaffir (makrut) lime leaves","Zest of 1 lime for every 3–4 leaves."],
+    [/thai basil/,"Thai basil","Regular basil plus a few mint leaves."],
+    [/herbes de provence/,"Herbes de Provence","Equal parts dried thyme, oregano and rosemary."],
+    [/capers/,"Capers","Chopped green olives or a few chopped pickles."],
+    [/\bsole\b/,"Sole","Any thin white fish: flounder, tilapia, basa or haddock."],
+    [/phyllo/,"Phyllo dough","Puff pastry: one sheet on the bottom, one on top. Bake until puffed and golden."],
+    [/\bdill\b/,"Fresh dill","1 tsp dried dill per 1 tbsp fresh, or fresh parsley with a little mint."],
+    [/bomba|paella rice/,"Bomba / paella rice","Arborio or any medium-grain rice. Still don't stir!"],
+    [/saffron/,"Saffron","½ tsp turmeric + a pinch of paprika for the golden colour (the flavour will be milder)."],
+    [/mussels/,"Mussels","Extra shrimp, chunks of firm white fish, or browned chicken thighs."],
+    [/gochujang/,"Gochujang","Per 2 tbsp: 2 tbsp sriracha + 1 tsp honey + 1 tsp soy sauce."],
+    [/kimchi/,"Kimchi","Sauerkraut + 1 tsp red pepper flakes. Not identical, but tasty in fried rice."],
+    [/\bnori\b/,"Nori","Leave it out, or add extra sesame seeds and scallions."],
+    [/shiitake/,"Shiitake mushrooms","Cremini (brown) or white button mushrooms."],
+    [/star anise/,"Star anise","½ tsp Chinese five-spice, or ½ tsp fennel seeds."],
+    [/coriander seeds/,"Coriander seeds","1 tsp ground coriander per 1 tbsp seeds (add it with the stock instead of toasting)."],
+    [/hoisin/,"Hoisin sauce","2 tbsp soy sauce + 1 tbsp peanut butter + 1 tbsp honey + a little garlic."],
+    [/lemongrass/,"Lemongrass","Zest of ½ lemon per stalk plus a little extra ginger, or lemongrass paste from a tube."],
+    [/vermicelli|bihon/,"Rice vermicelli","Any thin rice noodles, or angel hair pasta in a pinch (not gluten-free)."],
+    [/allspice/,"Allspice","Equal parts cinnamon and nutmeg + a pinch of cloves (¼ tsp total replaces 3 berries)."],
+    [/preserved lemon/,"Preserved lemon","Zest and juice of 1 lemon + ½ tsp salt."],
+    [/green olives/,"Green olives","Black or Kalamata olives."],
+    [/ras el hanout/,"Ras el hanout","½ tsp each cumin, coriander, ginger and paprika + ¼ tsp cinnamon."],
+    [/turnip/,"Turnip","Parsnip, potato or extra carrot."],
+    [/couscous/,"Couscous","Rice or quinoa (both gluten-free)."],
+    [/harissa/,"Harissa","Sriracha or sambal oelek + a pinch of cumin and coriander."],
+    [/niter kibbeh/,"Niter kibbeh (spiced butter)","Butter or ghee warmed with a pinch each of cumin, cardamom, turmeric and garlic."],
+    [/berbere/,"Berbere spice","For 3 tbsp: 2 tbsp paprika + 1 tsp cayenne + ½ tsp each ground ginger, coriander and cinnamon + a pinch of cloves."],
+    [/injera/,"Injera","Rice, or warm pita/flatbread (pita is not gluten-free)."],
+    [/dend[eê]/,"Dendê (red palm) oil","Olive oil + 1 tsp paprika for colour."],
+    [/farofa/,"Farofa","Breadcrumbs toasted in butter until golden (not gluten-free)."],
+    [/batata palha/,"Batata palha (potato sticks)","Crushed plain potato chips."],
+    [/aj[ií] amarillo/,"Ají amarillo","Jalapeño, or a yellow bell pepper + a pinch of cayenne."],
+    [/aj[ií] limo/,"Ají limo","Habanero (very hot) or jalapeño/serrano (milder)."],
+    [/sivri|anaheim/,"Turkish sivri / Anaheim peppers","Cubanelle or green bell peppers, plus a pinch of chili flakes for heat."],
+    [/pul biber|aleppo/,"Pul biber (Aleppo pepper)","3 parts sweet paprika + 1 part red pepper flakes."],
+    [/sumac/,"Sumac","Lemon zest + a squeeze of lemon juice + a pinch of salt."],
+    [/bulgur/,"Bulgur","Couscous, rice or quinoa (rice and quinoa are gluten-free)."],
+    [/scotch bonnet/,"Scotch bonnet pepper","Habanero (same heat) or jalapeño (much milder)."],
+    [/emmental|gruy[eè]re/,"Emmental / Gruyère","Swiss cheese, or a mix of mozzarella and sharp cheddar."],
+    [/oyster sauce/,"Oyster sauce","Hoisin, or soy sauce + a pinch of brown sugar (also shellfish-free)."],
+    [/calamansi/,"Calamansi","Lime juice with a splash of orange juice."],
+    [/snow peas/,"Snow peas","Green beans, sugar snap peas or frozen peas."],
+    [/shrimp paste|terasi/,"Shrimp paste (terasi)","1 tsp fish sauce, or just leave it out."],
+    [/kecap manis/,"Kecap manis (sweet soy sauce)","Equal parts soy sauce and brown sugar (or honey), simmered 2 min until syrupy."],
+    [/prawn crackers/,"Prawn crackers","Rice crackers or plain potato chips."],
+    [/fried shallots/,"Fried shallots","Store-bought crispy fried onions, or sliced shallots fried in oil until golden."],
+    [/dried lime|limoo/,"Dried limes (limoo omani)","Zest and juice of 1 fresh lime per dried lime, added in the last 15 min."],
+    [/worcestershire/,"Worcestershire sauce","1 tbsp soy sauce + 1 tsp vinegar + a pinch of sugar."],
+    [/tartar sauce/,"Tartar sauce","Mayo + chopped pickles + a squeeze of lemon."],
+    [/parboiled/,"Parboiled rice","Regular long-grain rice. Use about 20% less stock and check it earlier."],
+    [/panko/,"Panko","Regular breadcrumbs or crushed crackers."],
+    [/heavy cream|cooking cream/,"Heavy / cooking cream","Evaporated milk, or whole milk + 2 tbsp melted butter (don't let it boil)."],
+    [/sparkling water/,"Sparkling water","Ice-cold plain water + an extra ½ tsp baking powder."],
+    [/tamari/,"Tamari","Regular soy sauce (contains wheat, so not gluten-free)."],
+    [/sesame oil/,"Sesame oil","Any oil, then sprinkle toasted sesame seeds for the nutty flavour."],
+    [/smoked paprika/,"Smoked paprika","Regular paprika + a pinch of cumin."],
+    [/mustard powder/,"Mustard powder","2 tsp prepared yellow mustard per 1 tsp powder."],
+    [/cilantro/,"Cilantro","Flat-leaf parsley + a squeeze of lime."],
+    [/bean sprouts/,"Bean sprouts","Shredded cabbage or thin cucumber strips for crunch."],
+    [/passata|tomato pur[eé]e/,"Tomato purée (passata)","Canned crushed tomatoes, blended smooth."],
+    [/jasmine rice|basmati/,"Jasmine / basmati rice","Any long-grain white rice."],
+    [/greek yogurt/,"Greek yogurt","Plain yogurt strained in a coffee filter or paper towel for 30 min."],
+    [/ground lamb/,"Ground lamb","Ground beef (Shepherd's Pie becomes Cottage Pie)."],
+    [/fresh thyme|sprigs thyme/,"Fresh thyme","1 tsp dried thyme per 1 tbsp fresh (or per 3 sprigs)."]
+  ];
+
+  function swapsFor(r){
+    const text = (r.ing.join(" ")+" "+r.steps.join(" ")).toLowerCase();
+    return SWAPS.filter(s=>s[0].test(text));
+  }
+
+  // Hook into the existing recipe popup
+  const baseOpen = openRecipe;
+  openRecipe = function(name){
+    baseOpen(name);
+    const r = RECIPES.find(x=>x.n===name); if(!r) return;
+    const found = swapsFor(r); if(!found.length) return;
+    $("modal").querySelectorAll(".ing label span").forEach(sp=>{
+      if(SWAPS.some(s=>s[0].test(sp.textContent.toLowerCase())))
+        sp.insertAdjacentHTML("beforeend",' <span class="swapmark">🔄 swap</span>');
+    });
+    const box = document.createElement("div");
+    box.className = "swaps";
+    box.innerHTML = `🔄 <strong>Missing something? Try these swaps:</strong><ul>${found.map(s=>`<li><b>${s[1]}:</b> ${s[2]}</li>`).join("")}</ul>`;
+    const anchor = $("modal").querySelector(".costnote") || $("modal").querySelector(".ing");
+    anchor.insertAdjacentElement("afterend", box);
+  };
+
+  // Swap Guide button in the header
+  const gbtn = document.createElement("button");
+  gbtn.className = "swapbtn";
+  gbtn.textContent = "🔄 Ingredient Swaps";
+  $("decideBtn").insertAdjacentElement("afterend", gbtn);
+  gbtn.onclick = openGuide;
+
+  function openGuide(){
+    const sorted = [...SWAPS].sort((a,b)=>a[1].localeCompare(b[1]));
+    $("modal").innerHTML = `
+      <div class="mhead">
+        <button class="close" id="closeBtn">✕</button>
+        <div class="emoji">🔄</div>
+        <h2>Ingredient Swap Guide</h2>
+        <p style="color:var(--muted);margin-top:6px">Missing an ingredient? Use one of these everyday alternatives. None use pork or alcohol.</p>
+      </div>
+      <div class="mbody">
+        <input class="guide-search" id="guideSearch" placeholder="🔍 Search an ingredient (e.g. saffron)">
+        <ul class="guide-list" id="guideList">${sorted.map(s=>`<li><b>${s[1]}</b><br>${s[2]}</li>`).join("")}</ul>
+      </div>`;
+    $("overlay").classList.add("show");
+    document.body.style.overflow = "hidden";
+    $("closeBtn").onclick = closeModal;
+    $("guideSearch").oninput = e=>{
+      const q = e.target.value.toLowerCase();
+      $("guideList").querySelectorAll("li").forEach(li=>{
+        li.style.display = li.textContent.toLowerCase().includes(q) ? "" : "none";
+      });
+    };
+  }
+
+  render();
+})();
+</script>
+<!-- ===== END ADD-ON ===== -->
+  
 render();
 </script>
 </body>
