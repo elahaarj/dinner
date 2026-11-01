@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What's for Dinner? ☪️ Halal World Recipe Explorer</title>
+<style>
+  :root{
+    --bg:#fff8f0; --card:#ffffff; --ink:#2b2118; --muted:#7a6a5c;
+    --accent:#e4572e; --accent2:#f3a712; --green:#29a36a; --line:#f0e2d3;
+    --shadow:0 6px 20px rgba(80,40,10,.10);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+  header{background:linear-gradient(135deg,#e4572e,#f3a712);color:#fff;padding:48px 20px 70px;text-align:center}
+  header h1{font-size:clamp(2rem,5vw,3.2rem);letter-spacing:-1px}
+  header p{opacity:.95;margin-top:6px;font-size:1.1rem}
+  .badges{margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  .badges span{background:rgba(255,255,255,.22);padding:5px 12px;border-radius:999px;font-weight:700;font-size:.9rem}
+  .decide{margin-top:24px;background:#fff;color:var(--accent);border:none;font-size:1.25rem;font-weight:800;
+    padding:16px 34px;border-radius:999px;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.18);transition:transform .15s}
+  .decide:hover{transform:scale(1.05)}
+  #roulette{margin-top:16px;font-size:1.3rem;font-weight:700;min-height:2rem}
+  .wrap{max-width:1200px;margin:-40px auto 40px;padding:0 16px}
+  .panel{background:var(--card);border-radius:18px;box-shadow:var(--shadow);padding:20px;margin-bottom:24px}
+  .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+  .row + .row{margin-top:14px}
+  input[type=search]{flex:1;min-width:220px;padding:12px 16px;border:2px solid var(--line);border-radius:12px;font-size:1rem;outline:none}
+  input[type=search]:focus{border-color:var(--accent)}
+  select{padding:11px 12px;border:2px solid var(--line);border-radius:12px;font-size:.95rem;background:#fff;cursor:pointer}
+  .label{font-weight:700;color:var(--muted);font-size:.85rem;text-transform:uppercase;letter-spacing:.5px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{border:2px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;cursor:pointer;font-size:.9rem;transition:.15s;user-select:none}
+  .chip:hover{border-color:var(--accent2)}
+  .chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .count{color:var(--muted);margin:0 4px 14px;font-weight:600}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px}
+  .card{background:var(--card);border-radius:16px;box-shadow:var(--shadow);overflow:hidden;cursor:pointer;transition:transform .15s,box-shadow .15s;display:flex;flex-direction:column;position:relative}
+  .card:hover{transform:translateY(-4px);box-shadow:0 12px 28px rgba(80,40,10,.16)}
+  .card .top{font-size:3.2rem;text-align:center;padding:22px 0 10px;background:linear-gradient(180deg,#fff3e4,#fff)}
+  .card .body{padding:12px 16px 16px;flex:1;display:flex;flex-direction:column;gap:6px}
+  .card h3{font-size:1.1rem;line-height:1.25}
+  .card .cuisine{color:var(--accent);font-weight:700;font-size:.85rem}
+  .card .desc{color:var(--muted);font-size:.9rem;flex:1}
+  .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .tag{font-size:.75rem;padding:3px 8px;border-radius:999px;background:#f6ede3;color:#6b5646;font-weight:600}
+  .tag.veg{background:#e3f6ea;color:#1d7a4d}.tag.vegan{background:#d6f5e0;color:#11663c}.tag.gf{background:#fff1cc;color:#8a6200}
+  .tag.sf{background:#e6f0ff;color:#2b5aa8}.tag.cost{background:#e8f4ff;color:#0b5394}
+  .fav{position:absolute;top:10px;right:12px;font-size:1.4rem;background:none;border:none;cursor:pointer;filter:grayscale(1);opacity:.5;transition:.15s}
+  .fav.on{filter:none;opacity:1}
+  .empty{text-align:center;padding:50px;color:var(--muted);font-size:1.1rem}
+  .overlay{position:fixed;inset:0;background:rgba(30,15,5,.55);display:none;align-items:flex-start;justify-content:center;padding:30px 12px;overflow-y:auto;z-index:50}
+  .overlay.show{display:flex}
+  .modal{background:#fff;border-radius:20px;max-width:760px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden;animation:pop .2s ease}
+  @keyframes pop{from{transform:scale(.95);opacity:0}to{transform:none;opacity:1}}
+  .mhead{background:linear-gradient(135deg,#fff1e0,#ffe2c4);padding:26px 28px;position:relative}
+  .mhead .emoji{font-size:3.5rem}
+  .mhead h2{font-size:1.8rem;line-height:1.2;margin-top:4px}
+  .close{position:absolute;top:14px;right:16px;border:none;background:#fff;width:38px;height:38px;border-radius:50%;font-size:1.2rem;cursor:pointer;box-shadow:var(--shadow)}
+  .mbody{padding:24px 28px 30px}
+  .mbody h4{margin:20px 0 10px;font-size:1.1rem;color:var(--accent)}
+  .ing label{display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-bottom:1px dashed var(--line);cursor:pointer}
+  .ing input{margin-top:5px;accent-color:var(--green);transform:scale(1.15)}
+  .ing input:checked + span{text-decoration:line-through;color:#aaa}
+  .costnote{font-size:.85rem;color:var(--muted);margin-top:8px}
+  ol.steps{list-style:none;counter-reset:s}
+  ol.steps li{counter-increment:s;position:relative;padding:10px 10px 10px 48px;margin-bottom:8px;background:#fffaf4;border-radius:12px;cursor:pointer;transition:.15s}
+  ol.steps li::before{content:counter(s);position:absolute;left:12px;top:10px;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;display:grid;place-items:center;font-size:.85rem}
+  ol.steps li.done{opacity:.45;text-decoration:line-through}
+  ol.steps li.done::before{background:var(--green);content:"✓"}
+  .tip{background:#eef8f2;border-left:4px solid var(--green);padding:12px 14px;border-radius:8px;margin-top:18px;font-size:.95rem}
+  .halal{background:#f1f5ff;border-left:4px solid #2b5aa8;padding:12px 14px;border-radius:8px;margin-top:12px;font-size:.92rem}
+  .halal ul{margin:6px 0 0 18px}
+  .mactions{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}
+  .btn{border:none;padding:11px 18px;border-radius:12px;font-weight:700;cursor:pointer;font-size:.95rem}
+  .btn.primary{background:var(--accent);color:#fff}.btn.ghost{background:#f6ede3;color:var(--ink)}
+  footer{text-align:center;color:var(--muted);padding:20px 16px 40px;font-size:.9rem;max-width:800px;margin:0 auto}
+  @media print{header,.panel,.grid,.count,footer,.mactions,.close{display:none!important}.overlay{position:static;background:none;display:block;padding:0}.modal{box-shadow:none}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🍽️ What's for Dinner?</h1>
+  <p>Halal dishes from around the world, or let fate decide.</p>
+  <div class="badges"><span>☪️ No pork · No alcohol</span><span>💲 Costs in CAD</span><span>🌍 25 cuisines</span></div>
+  <button class="decide" id="decideBtn">🎲 Decide For Me!</button>
+  <div id="roulette"></div>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <div class="row">
+      <input type="search" id="search" placeholder="🔍 Search dishes, ingredients, cuisines… (e.g. 'chicken', 'coconut', 'Thai')">
+      <select id="timeFilter">
+        <option value="999">⏱ Any time</option>
+        <option value="30">⚡ 30 min or less</option>
+        <option value="60">🕐 1 hour or less</option>
+        <option value="90">🕑 1.5 hours or less</option>
+      </select>
+      <select id="budgetFilter">
+        <option value="999">💲 Any budget</option>
+        <option value="3">Under $3 / serving</option>
+        <option value="5">Under $5 / serving</option>
+        <option value="7">Under $7 / serving</option>
+      </select>
+      <select id="sortBy">
+        <option value="cuisine">Sort: Cuisine A–Z</option>
+        <option value="cost">Sort: Cheapest per serving</option>
+        <option value="time">Sort: Quickest first</option>
+        <option value="name">Sort: Dish name A–Z</option>
+      </select>
+    </div>
+    <div class="row">
+      <span class="label">Diet:</span>
+      <div class="chips" id="dietChips">
+        <span class="chip" data-diet="veg">🥦 Vegetarian</span>
+        <span class="chip" data-diet="vegan">🌱 Vegan</span>
+        <span class="chip" data-diet="gf">🌾 Gluten-Free</span>
+        <span class="chip" data-diet="nosf">🦐 No Shellfish</span>
+        <span class="chip" data-diet="fav">❤️ Favorites</span>
+      </div>
+    </div>
+    <div class="row">
+      <span class="label">Cuisine:</span>
+      <div class="chips" id="cuisineChips"></div>
+    </div>
+  </div>
+
+  <div class="count" id="count"></div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
+
+<footer>
+  ☪️ All recipes are free of pork and alcohol. Always buy halal-certified (zabiha) meat and check labels on stock, cheese and sauces.<br>
+  💲 Costs are estimates in CAD based on typical 2024–25 Canadian grocery prices (mid-range supermarkets and halal butchers), counting only the amounts used. Prices vary by province, store and season.<br>
+  👩‍🍳 Tap ingredients and steps to check them off as you cook.
+</footer>
+
+<script>
+const CUISINES = {
+  "American":"🇺🇸","Brazilian":"🇧🇷","British":"🇬🇧","Chinese":"🇨🇳","Ethiopian":"🇪🇹","Filipino":"🇵🇭",
+  "French":"🇫🇷","German":"🇩🇪","Greek":"🇬🇷","Indian":"🇮🇳","Indonesian":"🇮🇩","Italian":"🇮🇹",
+  "Jamaican":"🇯🇲","Japanese":"🇯🇵","Korean":"🇰🇷","Lebanese":"🇱🇧","Mexican":"🇲🇽","Moroccan":"🇲🇦",
+  "Nigerian":"🇳🇬","Persian":"🇮🇷","Peruvian":"🇵🇪","Spanish":"🇪🇸","Thai":"🇹🇭","Turkish":"🇹🇷","Vietnamese":"🇻🇳"
+};
+
+// p = estimated total cost in CAD for the listed servings (s)
+const RECIPES = [
+// ---------- ITALIAN ----------
+{c:"Italian",n:"Chicken Parmigiana",e:"🍗",t:50,d:"Medium",s:4,p:25,tags:[],
+ desc:"Crispy breaded chicken cutlets baked under tomato sauce and bubbling mozzarella, served with spaghetti.",
+ ing:["2 large chicken breasts (about 700 g), halved horizontally","60 g flour","2 eggs, beaten","100 g breadcrumbs + 30 g grated Parmesan","796 ml can crushed tomatoes","3 garlic cloves, minced","1 tsp dried oregano + fresh basil","200 g mozzarella, sliced or shredded","400 g spaghetti","Olive oil, salt, pepper"],
+ steps:["Make the sauce: sauté garlic in 2 tbsp olive oil for 1 min, add tomatoes, oregano and salt. Simmer 15 min, then stir in torn basil.","Pound chicken pieces to an even 1 cm thickness and season.","Dredge each piece in flour, then egg, then the breadcrumb-Parmesan mix.","Pan-fry in a thin layer of oil 3–4 min per side until golden.","Place in a baking dish, spoon over some sauce, top with mozzarella and bake at 220°C / 425°F for 8–10 min until bubbly.","Cook spaghetti, toss with the remaining sauce and serve alongside the chicken."],
+ tip:"Pound the chicken evenly so it cooks through before the crust gets too dark."},
+{c:"Italian",n:"Mushroom Risotto",e:"🍄",t:40,d:"Medium",s:4,p:17,tags:["veg","gf"],
+ desc:"Creamy arborio rice slowly cooked with mushrooms, lemon and Parmesan. No wine needed.",
+ ing:["300 g arborio rice","400 g mixed mushrooms, sliced","1.3 L hot vegetable stock","1 onion, finely chopped","2 garlic cloves, minced","1 tbsp lemon juice (replaces wine)","50 g butter","60 g Parmesan, grated","2 tbsp olive oil","Fresh parsley, salt & pepper"],
+ steps:["Keep the stock warm in a saucepan on low heat.","Sauté mushrooms in 1 tbsp oil and a knob of butter until browned. Season and set aside.","In the same pan, soften the onion in remaining oil for 5 min, then add garlic for 1 min.","Add the rice and toast for 2 min, stirring. Add a ladle of stock and the lemon juice; stir until absorbed.","Keep adding stock one ladle at a time, stirring often, until each is absorbed (about 18–20 min).","When rice is creamy and just tender, stir in mushrooms, remaining butter and Parmesan. Rest 2 min, garnish with parsley."],
+ tip:"The splash of lemon gives the brightness wine normally would. Check your stock is gluten-free if needed."},
+// ---------- MEXICAN ----------
+{c:"Mexican",n:"Chicken Tinga Tacos",e:"🌮",t:40,d:"Easy",s:4,p:23,tags:["gf"],
+ desc:"Shredded chicken in a smoky chipotle-tomato sauce, piled onto warm corn tortillas.",
+ ing:["600 g boneless chicken thighs or breasts","1 onion, thinly sliced","2 garlic cloves","398 ml can diced tomatoes","2–3 chipotle peppers in adobo + 1 tbsp sauce","1 tsp dried oregano","12 corn tortillas","Toppings: 2 avocados, crema, cotija, cilantro, lime"],
+ steps:["Simmer chicken in salted water for 15–20 min until cooked. Shred and reserve ½ cup broth.","Blend tomatoes, chipotles, adobo, garlic, oregano and reserved broth until smooth.","Sauté onion in oil until soft, about 5 min.","Add the sauce and simmer 5 min, then stir in the chicken and cook 5 more min.","Warm tortillas in a dry skillet and fill with tinga and toppings."],
+ tip:"Tinga also makes great tostadas. Pile it on crispy tortillas with refried beans."},
+{c:"Mexican",n:"Black Bean & Sweet Potato Enchiladas",e:"🫔",t:50,d:"Easy",s:4,p:19,tags:["veg"],
+ desc:"Hearty enchiladas rolled with roasted sweet potato and black beans, baked in red sauce.",
+ ing:["2 sweet potatoes, diced","540 ml can black beans, drained","1 tsp cumin","1 tsp smoked paprika","500 ml red enchilada sauce","8 flour or corn tortillas","150 g shredded cheese (Monterey Jack or cheddar)","Cilantro, sour cream, sliced jalapeño"],
+ steps:["Preheat oven to 200°C / 400°F. Toss sweet potato with oil, cumin, paprika and salt; roast 20 min.","Mix roasted potato with black beans and half the cheese.","Spread a little sauce in a baking dish. Fill tortillas, roll up, place seam-down.","Pour remaining sauce over, top with remaining cheese.","Bake 15–20 min until bubbly. Garnish and serve."],
+ tip:"Use corn tortillas and check the sauce label to make it gluten-free."},
+// ---------- JAPANESE ----------
+{c:"Japanese",n:"Chicken Teriyaki",e:"🍱",t:25,d:"Easy",s:4,p:14,tags:[],
+ desc:"Juicy pan-seared chicken thighs in a glossy homemade teriyaki glaze, made without mirin or sake.",
+ ing:["600 g boneless chicken thighs (skin-on if you can find them)","4 tbsp soy sauce","2 tbsp honey","1 tbsp sugar","1 tbsp rice vinegar","2 tbsp water","1 tsp grated ginger","Steamed rice, sesame seeds, scallions"],
+ steps:["Mix soy sauce, honey, sugar, rice vinegar, water and ginger in a bowl.","Pat chicken dry. Place skin-side down in a cold non-stick pan, then heat to medium. Cook 7–8 min until crisp.","Flip and cook 4–5 min more. Wipe out excess fat.","Pour in the sauce and simmer, spooning over chicken, until thick and glossy (2–3 min).","Slice and serve over rice with sesame and scallions."],
+ tip:"Honey and rice vinegar recreate the sweet-tangy glaze of mirin and sake. Use tamari for gluten-free."},
+{c:"Japanese",n:"Oyakodon (Chicken & Egg Rice Bowl)",e:"🍚",t:25,d:"Easy",s:2,p:8,tags:[],
+ desc:"Comforting bowl of chicken and softly set egg simmered in dashi, over rice.",
+ ing:["250 g chicken thigh, bite-sized pieces","½ onion, thinly sliced","3 eggs, lightly beaten","180 ml dashi stock (check label: some instant dashi contains mirin)","2 tbsp soy sauce","1 tbsp sugar + 1 tsp rice vinegar (replaces mirin)","2 bowls steamed rice","Scallions"],
+ steps:["Combine dashi, soy sauce, sugar and rice vinegar in a small pan and bring to a simmer.","Add onion and cook 3 min, then add chicken and simmer 5–6 min until cooked.","Drizzle the beaten eggs over in a circle. Cover and cook 1 min until just barely set.","Slide over bowls of hot rice and top with scallions."],
+ tip:"Don't overmix the eggs. Streaks of white and yolk give the classic texture."},
+// ---------- CHINESE ----------
+{c:"Chinese",n:"Kung Pao Chicken",e:"🥜",t:30,d:"Medium",s:4,p:14,tags:[],
+ desc:"Sichuan stir-fry with chicken, peanuts, dried chilies and numbing peppercorns.",
+ ing:["500 g chicken thigh, diced","1 tbsp soy sauce + 1 tsp cornstarch (marinade)","8–10 dried red chilies","1 tsp Sichuan peppercorns","3 garlic cloves, 1 tbsp ginger, minced","4 scallions, chopped","60 g roasted peanuts","Sauce: 2 tbsp soy, 1 tbsp Chinkiang black vinegar, 1 tbsp sugar, 1 tsp cornstarch, 3 tbsp water","Steamed rice"],
+ steps:["Marinate chicken with soy and cornstarch for 10 min. Mix sauce ingredients.","Heat a wok with 2 tbsp oil. Fry chilies and peppercorns 30 sec until fragrant (don't burn).","Add chicken and stir-fry until golden and cooked, 4–5 min.","Add garlic, ginger and scallion whites; cook 30 sec.","Pour in sauce, toss until thickened. Stir in peanuts and scallion greens. Serve with rice."],
+ tip:"Many restaurant versions use Shaoxing wine. This one doesn't need it."},
+{c:"Chinese",n:"Mapo Tofu (with Beef)",e:"🌶️",t:25,d:"Medium",s:4,p:10,tags:[],
+ desc:"Silky tofu in a fiery, savory chili bean sauce with minced beef, the original Sichuan way.",
+ ing:["400 g soft/silken tofu, cubed","150 g ground beef","2 tbsp doubanjiang (chili bean paste)","1 tbsp fermented black beans, chopped","2 garlic cloves, 1 tsp ginger, minced","250 ml water or halal chicken stock","1 tsp ground Sichuan peppercorns","1 tbsp cornstarch + 2 tbsp water","Scallions, steamed rice"],
+ steps:["Blanch tofu cubes in gently simmering salted water for 2 min, then drain.","Stir-fry beef in oil until browned and crispy.","Add doubanjiang, black beans, garlic and ginger; fry 1 min until the oil turns red.","Add stock and tofu; simmer gently 5 min.","Stir in cornstarch slurry to thicken. Finish with Sichuan pepper and scallions. Serve with rice."],
+ tip:"Swap the beef for minced shiitake and use vegetable stock for a vegetarian version."},
+// ---------- INDIAN ----------
+{c:"Indian",n:"Butter Chicken (Murgh Makhani)",e:"🍛",t:50,d:"Medium",s:4,p:22,tags:["gf"],
+ desc:"Tender tandoori-spiced chicken in a rich, velvety tomato-butter sauce.",
+ ing:["700 g chicken thigh, chunks","Marinade: 150 g yogurt, 1 tsp each garam masala, chili powder, turmeric, 1 tbsp ginger-garlic paste","50 g butter","1 onion, chopped","680 ml tomato purée (passata)","1 tsp garam masala, 1 tsp cumin, 1 tsp Kashmiri chili","120 ml heavy cream","1 tsp kasoori methi (dried fenugreek)","1 tsp sugar, salt","Basmati rice or naan"],
+ steps:["Marinate chicken for at least 30 min (or overnight).","Sear or grill chicken until charred in spots; set aside.","Melt butter, sauté onion 8 min until golden. Add spices for 1 min.","Add tomato purée and simmer 10 min. Blend smooth if desired.","Add chicken, cream, sugar and crushed methi. Simmer 10 min. Serve with rice or naan."],
+ tip:"Kasoori methi is the secret flavor. Crush it between your palms before adding."},
+{c:"Indian",n:"Chana Masala",e:"🫘",t:40,d:"Easy",s:4,p:10.5,tags:["veg","vegan","gf"],
+ desc:"Punjabi chickpea curry, tangy, spicy and deeply aromatic.",
+ ing:["2 × 540 ml cans chickpeas, drained","1 large onion, finely chopped","3 tomatoes, chopped","1 tbsp ginger-garlic paste","1 green chili, slit","1 tsp cumin seeds","2 tsp chana masala or garam masala","1 tsp coriander, ½ tsp turmeric, 1 tsp chili powder","1 tsp amchur (mango powder) or lemon juice","Fresh cilantro, basmati rice"],
+ steps:["Heat 3 tbsp oil, add cumin seeds until they sizzle.","Add onion and cook 10 min until deep golden.","Add ginger-garlic and chili for 1 min, then all ground spices for 30 sec.","Add tomatoes and cook until they break down into a thick paste, 8 min.","Add chickpeas and 1 cup water; simmer 15 min, mashing a few chickpeas to thicken.","Stir in amchur, garnish with cilantro. Serve with rice or roti."],
+ tip:"Browning the onions well is what gives this its depth."},
+// ---------- THAI ----------
+{c:"Thai",n:"Pad Thai",e:"🍜",t:30,d:"Medium",s:2,p:13,tags:["gf","sf"],
+ desc:"Stir-fried rice noodles with shrimp, egg, tamarind, peanuts and lime.",
+ ing:["200 g flat rice noodles","200 g shrimp (or firm tofu)","2 eggs","2 garlic cloves, minced","Sauce: 3 tbsp tamarind paste, 2 tbsp fish sauce, 2 tbsp palm/brown sugar","1 cup bean sprouts","3 scallions, cut in lengths","Crushed peanuts, lime wedges, chili flakes"],
+ steps:["Soak noodles in warm water 20–30 min until pliable; drain. Mix sauce ingredients.","Heat oil in a wok, cook shrimp until pink; push aside.","Add garlic, then crack in eggs and scramble.","Add noodles and sauce; toss 2–3 min until noodles are tender and coated.","Toss in sprouts and scallions. Serve with peanuts, lime and chili."],
+ tip:"Don't oversoak the noodles. They finish cooking in the wok. Use tofu for a shellfish-free version."},
+{c:"Thai",n:"Thai Green Curry",e:"🥥",t:35,d:"Easy",s:4,p:22,tags:["gf"],
+ desc:"Fragrant coconut curry with chicken, Thai basil and crunchy vegetables.",
+ ing:["500 g chicken thigh, sliced","3–4 tbsp green curry paste","2 × 400 ml cans coconut milk","1 eggplant or zucchini, chunks","1 red bell pepper, sliced","100 g green beans","4 kaffir lime leaves","1–2 tbsp fish sauce, 1 tsp palm sugar","Thai basil, jasmine rice"],
+ steps:["Simmer the thick cream from the top of one can of coconut milk until the oil separates.","Fry the curry paste in it for 2 min until fragrant.","Add chicken and stir to coat; cook 3 min.","Add remaining coconut milk, lime leaves and vegetables; simmer 10–12 min.","Season with fish sauce and sugar. Stir in basil and serve with rice."],
+ tip:"Use tofu and soy sauce instead of fish sauce for a vegan version."},
+// ---------- FRENCH ----------
+{c:"French",n:"Sole Meunière",e:"🐠",t:25,d:"Easy",s:4,p:24,tags:[],
+ desc:"Delicate sole fillets pan-fried in nutty brown butter with lemon and parsley, a Parisian bistro classic.",
+ ing:["600 g sole fillets (4–8 fillets)","60 g flour","80 g butter","2 tbsp neutral oil","Juice of 1 lemon + 1 lemon in wedges","2 tbsp chopped parsley","1 tbsp capers (optional)","800 g baby potatoes + 400 g green beans to serve","Salt, pepper"],
+ steps:["Boil potatoes 15 min until tender; steam green beans 4 min.","Pat fish very dry, season, dredge in flour and shake off excess.","Heat oil and 1 tbsp butter in a large non-stick pan over medium-high. Cook fillets 2 min per side until golden; transfer to warm plates (work in batches).","Wipe the pan, add remaining butter and cook until foamy and nutty brown, about 2 min.","Off the heat, add lemon juice, parsley and capers; spoon over the fish. Serve with potatoes and beans."],
+ tip:"Use rice flour to make it gluten-free. Watch the butter closely, since it goes from brown to burnt quickly."},
+{c:"French",n:"Ratatouille",e:"🍆",t:60,d:"Easy",s:4,p:15,tags:["veg","vegan","gf"],
+ desc:"Provençal summer vegetable stew of eggplant, zucchini, peppers and tomato.",
+ ing:["1 eggplant, cubed","2 zucchini, cubed","2 bell peppers, chopped","1 onion, chopped","4 garlic cloves","796 ml can whole tomatoes (or 800 g ripe tomatoes)","2 tbsp herbes de Provence or thyme","Olive oil, salt, pepper","Fresh basil"],
+ steps:["Sauté eggplant in olive oil until golden; remove. Repeat with zucchini, then peppers (each separately).","In the same pot, soften onion 5 min, add garlic 1 min.","Add tomatoes and herbs, simmer 10 min.","Return all vegetables, season, cover and simmer gently 25–30 min.","Stir in torn basil and a drizzle of olive oil. Serve warm or at room temp."],
+ tip:"Cooking each vegetable separately keeps their individual textures."},
+// ---------- GREEK ----------
+{c:"Greek",n:"Chicken Souvlaki with Tzatziki",e:"🍢",t:40,d:"Easy",s:4,p:25,tags:[],
+ desc:"Lemon-oregano marinated chicken skewers in warm pita with cool tzatziki.",
+ ing:["700 g chicken breast, cubed","Marinade: 4 tbsp olive oil, juice of 1 lemon, 3 garlic cloves, 2 tsp dried oregano","Tzatziki: 250 g Greek yogurt, ½ English cucumber (grated & squeezed), 1 garlic clove, dill, lemon","4 pita breads","Tomato, red onion, lettuce"],
+ steps:["Marinate chicken for at least 30 min (up to 8 hours).","Mix tzatziki ingredients, season, and chill.","Thread chicken onto skewers (soak wooden ones first).","Grill or pan-sear 10–12 min, turning, until charred and cooked through.","Warm pitas and fill with chicken, tzatziki, tomato and onion."],
+ tip:"Serve over rice or Greek salad instead of pita for gluten-free."},
+{c:"Greek",n:"Spanakopita",e:"🥬",t:75,d:"Medium",s:6,p:22,tags:["veg"],
+ desc:"Flaky phyllo pie filled with spinach, feta, herbs and scallions.",
+ ing:["600 g frozen spinach, thawed & squeezed (or 1 kg fresh)","250 g feta, crumbled","2 eggs","1 bunch scallions, chopped","Handful dill and parsley, chopped","1 pack phyllo dough (454 g), thawed","100 ml olive oil or melted butter","Nutmeg, pepper"],
+ steps:["Preheat oven to 180°C / 350°F.","Squeeze all the water out of the spinach and chop.","Mix spinach, feta, eggs, scallions, herbs, nutmeg and pepper.","Layer 8 phyllo sheets in an oiled dish, brushing each with oil.","Spread filling, top with remaining 8 sheets (brushing each). Score the top into squares.","Bake 45 min until golden and crisp. Rest 10 min before cutting."],
+ tip:"Keep phyllo covered with a damp towel so it doesn't dry out."},
+// ---------- SPANISH ----------
+{c:"Spanish",n:"Seafood Paella",e:"🥘",t:50,d:"Medium",s:4,p:30,tags:["gf","sf"],
+ desc:"Saffron rice with shrimp, mussels and that coveted crispy bottom (socarrat).",
+ ing:["300 g bomba or paella rice","1 L hot fish or vegetable stock","Pinch saffron threads","300 g shrimp","500 g mussels, cleaned","1 onion, 1 red pepper, chopped","3 garlic cloves","2 tomatoes, grated","1 tsp smoked paprika","100 g frozen peas","Lemon wedges, parsley, olive oil"],
+ steps:["Steep saffron in the hot stock.","In a wide pan, sear shrimp in olive oil 1 min per side; remove.","Sauté onion and pepper 5 min, add garlic, paprika and grated tomato; cook 5 min.","Stir in rice to coat, then pour in stock. Spread evenly and DO NOT stir from now on.","Simmer 15 min, then nestle in mussels, shrimp and peas. Cook 5–8 min until mussels open.","Raise heat for the last 1–2 min to crisp the bottom. Rest 5 min under a towel; serve with lemon."],
+ tip:"Prefer no shellfish? Use 500 g chicken thighs, browned first, for a Valencian-style paella."},
+{c:"Spanish",n:"Tortilla Española",e:"🍳",t:45,d:"Medium",s:4,p:6,tags:["veg","gf"],
+ desc:"Thick Spanish omelette of tender potatoes and sweet onion slowly cooked in olive oil.",
+ ing:["600 g potatoes, peeled and thinly sliced","1 onion, thinly sliced","6 large eggs","250 ml olive oil (most is strained off and reusable)","Salt"],
+ steps:["Heat oil in a non-stick pan. Add potatoes and onion; cook gently 20 min until soft but not browned.","Drain (save the oil!). Beat eggs with salt and fold in potatoes; rest 10 min.","Heat 2 tbsp of the oil in the pan, pour in mixture. Cook on medium-low 5–6 min.","Place a plate over the pan and flip; slide back in to cook the other side 3–4 min.","Serve warm or at room temperature with crusty bread and salad."],
+ tip:"Slightly runny in the middle is the Spanish way."},
+// ---------- KOREAN ----------
+{c:"Korean",n:"Bibimbap",e:"🥗",t:45,d:"Medium",s:4,p:17,tags:[],
+ desc:"Colorful rice bowl with seasoned vegetables, beef, fried egg and gochujang sauce.",
+ ing:["4 bowls cooked short-grain rice","250 g ground or thinly sliced beef","2 tbsp soy sauce, 1 tbsp sugar, 1 tsp sesame oil (for beef)","200 g spinach","2 carrots, julienned","1 zucchini, julienned","200 g bean sprouts","4 shiitake, sliced","4 eggs","Sauce: 3 tbsp gochujang, 1 tbsp sesame oil, 1 tbsp sugar, 1 tbsp water, 1 tsp rice vinegar"],
+ steps:["Mix sauce ingredients and set aside.","Marinate beef in soy, sugar, sesame oil; stir-fry until cooked.","Blanch spinach and sprouts; season each with a pinch of salt, sesame oil and garlic.","Quickly sauté carrots, zucchini and mushrooms separately with salt.","Fry eggs sunny-side up.","Arrange everything over rice, top with an egg, and mix with sauce at the table."],
+ tip:"Some gochujang brands list alcohol as a preservative. Check the label or look for a halal-certified brand."},
+{c:"Korean",n:"Kimchi Fried Rice",e:"🔥",t:20,d:"Easy",s:2,p:8,tags:[],
+ desc:"Quick, punchy fried rice with fermented kimchi, topped with a runny egg.",
+ ing:["2 cups day-old cooked rice","1 cup kimchi, chopped + 2 tbsp juice","100 g ground beef or halal beef bacon (optional)","1 tbsp gochujang","1 tsp soy sauce","1 tsp sesame oil","2 eggs","Scallions, sesame seeds, nori"],
+ steps:["Brown the beef in a pan until crispy (or start with 1 tbsp oil if skipping).","Add kimchi and cook 3–4 min until slightly caramelized.","Add rice, kimchi juice, gochujang and soy; stir-fry 3–4 min.","Finish with sesame oil.","Top with fried eggs, scallions, sesame seeds and torn nori."],
+ tip:"Older, sour kimchi makes the best fried rice."},
+// ---------- VIETNAMESE ----------
+{c:"Vietnamese",n:"Quick Beef Phở",e:"🍲",t:60,d:"Medium",s:4,p:26,tags:["gf"],
+ desc:"Aromatic beef noodle soup with charred aromatics, star anise and fresh herbs.",
+ ing:["2 L halal beef stock (or halal bouillon + water)","1 onion and 1 thumb ginger, halved","3 star anise, 1 cinnamon stick, 4 cloves, 1 tbsp coriander seeds","3 tbsp fish sauce, 1 tbsp sugar","300 g rice noodles","300 g beef sirloin, very thinly sliced","Bean sprouts, Thai basil, cilantro, lime, chili, hoisin, sriracha"],
+ steps:["Char onion and ginger directly over a flame or under the broiler until blackened in spots.","Toast spices in a dry pot 2 min. Add stock, onion and ginger; simmer 40 min.","Strain broth; season with fish sauce and sugar.","Cook rice noodles per package; divide into bowls.","Top with raw beef slices and pour boiling broth over to cook them.","Serve with herbs, sprouts, lime and sauces on the side."],
+ tip:"Freeze the beef for 20 min to make paper-thin slicing easy."},
+{c:"Vietnamese",n:"Bún Bò Nướng (Lemongrass Beef Noodle Bowl)",e:"🥢",t:40,d:"Easy",s:4,p:28,tags:["gf"],
+ desc:"Grilled lemongrass beef over cool vermicelli with herbs and nước chấm dressing.",
+ ing:["600 g beef sirloin or flank, very thinly sliced","Marinade: 2 stalks lemongrass (minced), 3 garlic cloves, 2 tbsp fish sauce, 1 tbsp sugar, 1 tbsp oil","300 g rice vermicelli","Lettuce, cucumber, carrots, mint, cilantro","Nước chấm: 3 tbsp fish sauce, 3 tbsp sugar, 6 tbsp warm water, 3 tbsp lime juice, garlic, chili","Crushed peanuts"],
+ steps:["Marinate beef 30 min or more.","Make nước chấm: dissolve sugar in water, add remaining ingredients.","Cook vermicelli, rinse under cold water, drain.","Sear beef over very high heat in batches, 1–2 min per side, until caramelized.","Build bowls: lettuce & herbs, noodles, veggies, beef. Top with peanuts and drizzle with sauce."],
+ tip:"Chicken thighs work well too (bún gà nướng) and cost about $8 less."},
+// ---------- LEBANESE ----------
+{c:"Lebanese",n:"Chicken Shawarma",e:"🌯",t:45,d:"Easy",s:4,p:24,tags:[],
+ desc:"Spiced, roasted chicken wrapped in flatbread with garlic sauce and pickles.",
+ ing:["800 g boneless chicken thighs","Marinade: 4 tbsp olive oil, juice of 1 lemon, 4 garlic cloves, 1 tsp each cumin, paprika, coriander, ½ tsp each cinnamon, turmeric, allspice","Garlic sauce: 150 g mayo or yogurt, 2 garlic cloves, lemon","4 pita or Lebanese flatbreads","Pickles, tomato, onion, parsley"],
+ steps:["Marinate chicken at least 1 hour.","Roast at 220°C / 425°F for 25 min (or grill) until charred at edges.","Rest 5 min, then slice thinly.","Mix garlic sauce ingredients.","Fill flatbreads with chicken, sauce, pickles and vegetables. Roll tightly and toast in a pan."],
+ tip:"Serve over rice with salad for a gluten-free plate."},
+{c:"Lebanese",n:"Mujadara",e:"🧅",t:50,d:"Easy",s:4,p:8,tags:["veg","vegan","gf"],
+ desc:"Humble, delicious lentils and rice crowned with sweet, crispy fried onions.",
+ ing:["200 g brown or green lentils","200 g long-grain rice","3 large onions, thinly sliced","100 ml olive oil","1 tsp cumin","½ tsp cinnamon","Salt and pepper","Yogurt (or vegan yogurt) & cucumber salad to serve"],
+ steps:["Simmer lentils in water 15 min until just tender; drain.","Fry onions in olive oil over medium heat 20–25 min until deep brown and crisp. Remove half for topping.","Add rice and spices to the pot with the remaining onions; stir 1 min.","Add lentils and 500 ml water, salt; bring to boil, cover, simmer 18 min.","Rest 5 min, fluff, and top with crispy onions."],
+ tip:"Be patient with the onions. Their dark caramelization is the whole dish."},
+// ---------- MOROCCAN ----------
+{c:"Moroccan",n:"Chicken Tagine with Lemon & Olives",e:"🫒",t:75,d:"Medium",s:4,p:27,tags:["gf"],
+ desc:"Fragrant braised chicken with preserved lemon, green olives, ginger and saffron.",
+ ing:["1.5 kg bone-in chicken pieces","2 onions, grated","3 garlic cloves","1 tsp ginger, 1 tsp turmeric, 1 tsp cumin, ½ tsp cinnamon","Pinch saffron","1 preserved lemon, rind sliced","150 g green olives","300 ml chicken stock","Cilantro and parsley, chopped","300 g couscous (or rice for GF)"],
+ steps:["Rub chicken with garlic, spices and salt.","Brown chicken in olive oil in a tagine or Dutch oven; set aside.","Cook onions 8 min until soft. Return chicken, add stock, saffron and half the herbs.","Cover and simmer 45 min.","Add preserved lemon and olives; cook uncovered 10–15 min to reduce sauce.","Garnish with herbs and serve with couscous (or rice for GF)."],
+ tip:"No preserved lemons? Use the zest and juice of 1 lemon plus a pinch of salt."},
+{c:"Moroccan",n:"Seven-Vegetable Couscous",e:"🥕",t:50,d:"Easy",s:6,p:19,tags:["veg","vegan"],
+ desc:"Fluffy couscous topped with a warmly spiced vegetable and chickpea stew.",
+ ing:["300 g couscous","1 onion, 2 carrots, 2 zucchini, 1 turnip, ½ butternut squash, chunked","540 ml can chickpeas, drained","398 ml can diced tomatoes","1 tsp each ginger, turmeric, cumin, ras el hanout","1 L vegetable stock","Raisins, harissa, cilantro"],
+ steps:["Sauté onion in olive oil 5 min, add spices 1 min.","Add tomatoes, stock, carrots and turnip; simmer 15 min.","Add squash, zucchini, chickpeas and raisins; simmer 15 min more.","Prepare couscous: pour equal volume boiling water/stock over, cover 5 min, fluff with oil.","Mound couscous, top with vegetables and broth. Serve with harissa."],
+ tip:"Swap couscous for quinoa or millet to make it gluten-free."},
+// ---------- ETHIOPIAN ----------
+{c:"Ethiopian",n:"Doro Wat",e:"🍗",t:120,d:"Hard",s:6,p:23,tags:["gf"],
+ desc:"Ethiopia's celebrated spicy chicken stew with berbere and hard-boiled eggs.",
+ ing:["1.5 kg chicken drumsticks/thighs, skinned","4 large red onions, finely minced","4 tbsp niter kibbeh (spiced butter) or butter","3–4 tbsp berbere spice","4 garlic cloves, 1 tbsp ginger, minced","2 tbsp tomato paste","500 ml chicken stock","6 hard-boiled eggs, peeled & scored","Juice of 1 lemon"],
+ steps:["Rub chicken with lemon juice and salt; set aside.","Cook onions in a DRY pot over medium-low 20–30 min, stirring, until deeply reduced.","Add niter kibbeh, then berbere, garlic, ginger and tomato paste; cook 10 min.","Add chicken and stock; simmer covered 45 min until very tender.","Add scored eggs and simmer 10 min more. Serve with injera."],
+ tip:"Injera made from 100% teff is naturally gluten-free. Look for berbere at Ethiopian/Eritrean grocers."},
+{c:"Ethiopian",n:"Misir Wat (Red Lentil Stew)",e:"🥣",t:45,d:"Easy",s:4,p:7,tags:["veg","vegan","gf"],
+ desc:"Spicy, velvety red lentils simmered in berbere. Hearty and comforting.",
+ ing:["250 g red lentils, rinsed","2 red onions, finely chopped","3 tbsp oil (or niter kibbeh)","2–3 tbsp berbere","3 garlic cloves, 1 tbsp ginger","2 tbsp tomato paste","750 ml water or vegetable stock","Salt"],
+ steps:["Cook onions in oil 10 min until soft and golden.","Add garlic, ginger, berbere and tomato paste; fry 3 min.","Add lentils and water; bring to a boil.","Simmer 25 min, stirring, until lentils collapse into a thick stew.","Season with salt and serve with injera or rice."],
+ tip:"Pair with gomen (garlicky collards) for a classic veggie platter."},
+// ---------- AMERICAN ----------
+{c:"American",n:"Classic Smash Burgers",e:"🍔",t:20,d:"Easy",s:4,p:16,tags:[],
+ desc:"Crispy-edged, diner-style burgers with melty cheese and special sauce.",
+ ing:["600 g ground beef (80/20)","4 potato buns, toasted","4–8 slices processed cheese","1 onion, very thinly sliced","Pickles, lettuce, tomato","Sauce: 3 tbsp mayo, 1 tbsp ketchup, 1 tbsp yellow mustard, 1 tbsp chopped pickles"],
+ steps:["Divide beef into 8 loose balls (2 per burger). Mix sauce.","Heat a cast-iron skillet until smoking hot.","Place balls on the skillet and smash flat with a sturdy spatula. Season with salt and pepper.","Cook 2 min until edges are dark and crispy. Scrape, flip, add cheese, cook 1 min.","Stack two patties on toasted buns with sauce, onion and pickles."],
+ tip:"Place parchment between spatula and meat so it doesn't stick while smashing."},
+{c:"American",n:"Baked Mac & Cheese",e:"🧀",t:45,d:"Easy",s:6,p:16,tags:["veg"],
+ desc:"Ultra-creamy, cheesy macaroni with a golden, crunchy breadcrumb top.",
+ ing:["400 g elbow macaroni","50 g butter + 50 g flour","750 ml whole milk","300 g sharp cheddar, grated","100 g Gruyère or mozzarella, grated","1 tsp mustard powder, ½ tsp paprika","Topping: 60 g panko + 2 tbsp melted butter"],
+ steps:["Preheat oven to 190°C / 375°F. Cook macaroni 2 min less than package says; drain.","Melt butter, whisk in flour 1 min. Slowly whisk in milk; simmer until thickened.","Off heat, stir in cheeses, mustard and paprika. Season well.","Combine with pasta and pour into a baking dish.","Top with buttered panko and bake 20–25 min until bubbling and golden."],
+ tip:"Grate your own cheese. Pre-shredded has anti-caking agents that make sauce grainy."},
+// ---------- BRAZILIAN ----------
+{c:"Brazilian",n:"Moqueca (Fish Stew)",e:"🐟",t:45,d:"Easy",s:4,p:30,tags:["gf"],
+ desc:"Bahian coconut fish stew with peppers, tomato, lime and dendê oil.",
+ ing:["700 g firm white fish (cod, haddock, halibut), chunks","Juice of 2 limes, 3 garlic cloves","1 onion, 1 red & 1 yellow pepper, sliced","3 tomatoes, sliced","400 ml coconut milk","2 tbsp dendê (red palm) oil, or olive oil + 1 tsp paprika","1 tsp paprika","Cilantro, white rice"],
+ steps:["Marinate fish with lime, garlic and salt 20 min.","In a wide pot, layer half the onion, peppers and tomatoes; place fish on top, then remaining veg.","Pour over coconut milk, oil and paprika.","Cover and simmer 15–20 min without stirring until fish flakes.","Top with cilantro; serve with rice and farofa."],
+ tip:"Frozen cod or haddock from the freezer aisle works well and is cheaper than fresh."},
+{c:"Brazilian",n:"Strogonoff de Frango (Chicken Strogonoff)",e:"🐔",t:35,d:"Easy",s:4,p:22,tags:["gf"],
+ desc:"Brazil's favorite comfort food: creamy chicken and mushrooms in a tangy tomato-cream sauce, with rice and crunchy potato sticks.",
+ ing:["600 g chicken breast, cubed","1 onion, chopped","2 garlic cloves, minced","227 g mushrooms, sliced","2 tbsp ketchup + 1 tbsp tomato paste","1 tbsp yellow mustard (some Dijon brands contain wine)","250 ml cooking cream (or heavy cream)","1 tbsp butter","300 g white rice","Batata palha (shoestring potato sticks) to serve"],
+ steps:["Cook the rice.","Season chicken and brown in butter over high heat; remove.","Sauté onion 4 min, garlic 1 min, then mushrooms 5 min until golden.","Return chicken, add ketchup, tomato paste and mustard; stir 2 min.","Lower heat, stir in cream and warm through 3 min without boiling.","Serve over rice, topped generously with batata palha."],
+ tip:"Batata palha is the essential crunchy topping. Find it at Latin or Portuguese grocers, or use crushed plain potato chips."},
+// ---------- PERUVIAN ----------
+{c:"Peruvian",n:"Lomo Saltado",e:"🥩",t:30,d:"Medium",s:4,p:25,tags:[],
+ desc:"Chinese-Peruvian beef stir-fry with tomatoes, onions and fries, served with rice.",
+ ing:["600 g beef sirloin, strips","1 red onion, thick wedges","2 tomatoes, wedges","1 ají amarillo or jalapeño, strips","3 garlic cloves","3 tbsp soy sauce, 2 tbsp white or apple cider vinegar","Cilantro","500 g frozen French fries","White rice"],
+ steps:["Cook fries and rice.","Season beef; sear in a very hot wok in batches until browned. Remove.","Stir-fry onion and chili 1 min (keep crunchy). Add garlic.","Add tomatoes, beef, soy and vinegar; toss 1 min.","Toss in fries and cilantro at the end. Serve with rice."],
+ tip:"Cook on the highest heat possible for that smoky wok flavor."},
+{c:"Peruvian",n:"Classic Ceviche",e:"🍋",t:25,d:"Easy",s:4,p:29,tags:["gf"],
+ desc:"Fresh raw fish 'cooked' in lime juice with chili, red onion and cilantro.",
+ ing:["500 g very fresh sea bass, halibut or sole, 2 cm cubes","Juice of 10 limes","1 red onion, very thinly sliced","1 ají limo or habanero, minced","1 garlic clove, grated","Cilantro, salt","Boiled sweet potato and corn to serve"],
+ steps:["Rinse the sliced onion in cold water to mellow it.","Season fish with salt, garlic and chili in a cold glass bowl.","Pour lime juice over and toss; let sit 5–10 min until opaque outside.","Add onion and cilantro, toss.","Serve immediately with sweet potato and corn. Sip the leftover 'leche de tigre'!"],
+ tip:"Use only sushi-grade or very fresh fish, and keep everything ice cold."},
+// ---------- TURKISH ----------
+{c:"Turkish",n:"Menemen",e:"🍅",t:20,d:"Easy",s:2,p:9,tags:["veg"],
+ desc:"Turkish scrambled eggs cooked into sweet peppers and juicy tomatoes.",
+ ing:["4 eggs","3 ripe tomatoes, grated or diced","2 green peppers (Turkish sivri or Anaheim), chopped","1 small onion (optional)","2 tbsp olive oil or butter","Pul biber (Aleppo pepper), salt","50 g feta (optional)","Crusty bread"],
+ steps:["Sauté peppers (and onion) in oil 5 min until soft.","Add tomatoes and cook 6–8 min until thick and jammy.","Crack in eggs and gently stir just until softly set.","Season with salt and pul biber; crumble over feta if using.","Serve in the pan with bread for dipping."],
+ tip:"Skip the bread (or use GF bread) for a gluten-free meal. Whether to add onion is a real debate in Turkey, so try it both ways!"},
+{c:"Turkish",n:"Izgara Köfte (Grilled Meatballs)",e:"🧆",t:35,d:"Easy",s:4,p:17,tags:[],
+ desc:"Juicy spiced lamb & beef köfte with sumac onions and grilled peppers.",
+ ing:["500 g ground lamb/beef mix","1 onion, grated & squeezed","2 garlic cloves","2 tbsp breadcrumbs","1 tsp cumin, 1 tsp paprika, 1 tsp pul biber","Parsley, chopped","Sumac onions: 1 red onion, sliced, 1 tsp sumac, parsley","2 green peppers for grilling","250 g bulgur (for pilaf), 200 g yogurt"],
+ steps:["Knead meat with onion, garlic, crumbs, spices, parsley and salt for 3 min.","Chill 20 min, then shape into small fingers or patties. Cook bulgur per package.","Toss sliced onion with sumac, parsley and salt.","Grill or pan-fry köfte and peppers 3–4 min per side until browned.","Serve with sumac onions, peppers, yogurt and bulgur pilaf."],
+ tip:"Kneading well makes köfte bouncy and juicy."},
+// ---------- JAMAICAN ----------
+{c:"Jamaican",n:"Jerk Chicken",e:"🍗",t:75,d:"Medium",s:4,p:19,tags:["gf"],
+ desc:"Fiery, smoky chicken marinated in Scotch bonnet, allspice and thyme.",
+ ing:["1.5 kg bone-in chicken legs/thighs","6 scallions","2–4 Scotch bonnet peppers","4 garlic cloves","1 tbsp fresh thyme","1 tbsp ground allspice, ½ tsp cinnamon, ½ tsp nutmeg","2 tbsp brown sugar","3 tbsp tamari (GF soy sauce)","Juice of 2 limes, 2 tbsp oil"],
+ steps:["Blend all marinade ingredients until smooth (wear gloves for the peppers!).","Score chicken and coat in marinade; refrigerate 4 hours to overnight.","Grill over medium indirect heat 35–45 min, turning, until charred and cooked (75°C / 165°F).","Alternatively roast at 200°C / 400°F for 40 min, then broil to char.","Serve with rice and peas and fried plantains."],
+ tip:"Fewer Scotch bonnets = milder. Remove seeds for even less heat."},
+{c:"Jamaican",n:"Rice and Peas",e:"🍚",t:45,d:"Easy",s:6,p:7,tags:["veg","vegan","gf"],
+ desc:"Coconut rice cooked with kidney beans, thyme and a whole Scotch bonnet.",
+ ing:["400 g long-grain rice, rinsed","540 ml can kidney beans (with liquid)","400 ml coconut milk","3 scallions, crushed","3 sprigs thyme","1 whole Scotch bonnet (don't cut!)","3 allspice berries, 2 garlic cloves","Salt"],
+ steps:["Combine beans with their liquid, coconut milk, scallions, thyme, garlic, allspice and Scotch bonnet in a pot.","Add 250 ml water and salt; bring to a boil.","Stir in rice. Liquid should sit about 1 cm above rice; add water if needed.","Cover tightly and cook on low 20–25 min.","Remove aromatics and pepper, fluff, and serve."],
+ tip:"Keep the Scotch bonnet whole for flavor without explosive heat."},
+// ---------- GERMAN ----------
+{c:"German",n:"Chicken Schnitzel with Potato Salad",e:"🥨",t:45,d:"Medium",s:4,p:20,tags:[],
+ desc:"Golden, crispy chicken cutlets with tangy Swabian-style potato salad.",
+ ing:["4 chicken breast cutlets (about 600 g), or halal veal for Wiener Schnitzel","100 g flour, 2 eggs, 150 g breadcrumbs","Oil for shallow frying","Lemon wedges","Potato salad: 800 g waxy potatoes, 1 onion (finely diced), 200 ml hot halal beef or vegetable stock, 3 tbsp white vinegar, 1 tsp yellow mustard, 3 tbsp oil, chives"],
+ steps:["Boil potatoes in skins until tender; peel and slice while warm.","Heat stock with onion, vinegar and mustard; pour over potatoes. Add oil and chives; rest 30 min.","Pound chicken to 4–5 mm thick; season.","Dredge in flour, egg, then breadcrumbs (don't press).","Shallow-fry in hot oil 2–3 min per side, swirling, until puffy, golden and cooked through.","Serve with lemon and potato salad."],
+ tip:"Swirl the pan while frying so the crumb 'soufflés' away from the meat."},
+{c:"German",n:"Käsespätzle",e:"🧀",t:40,d:"Medium",s:4,p:16,tags:["veg"],
+ desc:"Germany's mac & cheese: tender egg noodles layered with cheese and crispy onions.",
+ ing:["400 g flour","4 eggs","200 ml sparkling water or milk","1 tsp salt, pinch nutmeg","250 g Emmental or Gruyère, grated","2 onions, sliced","40 g butter","Chives"],
+ steps:["Beat flour, eggs, water, salt and nutmeg into a thick, sticky batter; rest 10 min.","Fry onions in butter 15 min until crispy and brown.","Press batter through a spätzle maker or colander with large holes into boiling salted water.","When spätzle float (1–2 min), scoop them out.","Layer hot spätzle with cheese in a dish; top with onions and chives. Bake 5 min to melt if desired."],
+ tip:"No spätzle maker? Scrape batter off a wet cutting board into the water with a knife."},
+// ---------- FILIPINO ----------
+{c:"Filipino",n:"Chicken Adobo",e:"🍗",t:50,d:"Easy",s:4,p:12,tags:[],
+ desc:"The Philippines' beloved braise in soy, vinegar, garlic and bay leaves.",
+ ing:["1 kg bone-in chicken thighs/drumsticks","120 ml soy sauce","120 ml cane or white vinegar","1 head garlic, crushed","3 bay leaves","1 tsp black peppercorns","1 tbsp brown sugar (optional)","250 ml water","Steamed rice"],
+ steps:["Marinate chicken in soy and garlic 30 min (optional).","Brown chicken in oil, skin-side down; add garlic briefly.","Add soy, vinegar, water, bay and peppercorns. Don't stir for the first few minutes (lets the vinegar mellow).","Simmer covered 30 min until tender.","Uncover and reduce sauce until slightly sticky. Serve over rice."],
+ tip:"Use tamari or coconut aminos to make it gluten-free."},
+{c:"Filipino",n:"Pancit Bihon",e:"🍜",t:35,d:"Easy",s:6,p:20,tags:["gf","sf"],
+ desc:"Celebration rice noodles stir-fried with chicken, shrimp and vegetables.",
+ ing:["250 g bihon (rice vermicelli)","250 g chicken breast, thinly sliced","150 g shrimp (optional)","1 onion, 3 garlic cloves","1 carrot, julienned","2 cups shredded cabbage","1 cup snow peas","500 ml chicken stock","4 tbsp soy sauce (tamari for GF), 2 tbsp oyster sauce (GF)","Calamansi or lemon"],
+ steps:["Soak noodles in water 10 min; drain.","Sauté garlic and onion, add chicken and cook until done. Add shrimp 2 min.","Add carrots, snow peas and cabbage; stir-fry 2 min. Remove some veg for topping if you like.","Add stock, soy and oyster sauce; bring to a boil.","Add noodles and toss until liquid is absorbed. Serve with calamansi."],
+ tip:"Pancit symbolizes long life and is a must at Filipino birthdays! Skip the shrimp and add more chicken if you avoid shellfish."},
+// ---------- INDONESIAN ----------
+{c:"Indonesian",n:"Nasi Goreng",e:"🍳",t:25,d:"Easy",s:2,p:9,tags:[],
+ desc:"Sweet-savory Indonesian fried rice with kecap manis, topped with a fried egg.",
+ ing:["3 cups day-old cooked rice","150 g chicken (or shrimp)","3 shallots, 2 garlic cloves, 1 red chili (pounded or blended)","1 tsp shrimp paste (terasi, optional)","2 tbsp kecap manis (sweet soy)","1 tbsp soy sauce","2 eggs","Cucumber, tomato, prawn crackers, fried shallots"],
+ steps:["Fry the shallot-garlic-chili paste (and shrimp paste) in oil 2 min until fragrant.","Add chicken/shrimp and cook through.","Add rice and toss to break clumps.","Add kecap manis and soy; stir-fry 3 min until rice is evenly colored.","Serve with fried eggs, cucumber, tomato and crackers."],
+ tip:"Kecap manis is essential. Find it in Asian groceries (ABC brand is halal-certified)."},
+{c:"Indonesian",n:"Gado-Gado",e:"🥜",t:35,d:"Easy",s:4,p:13,tags:["veg","gf"],
+ desc:"Vibrant salad of vegetables, tofu, eggs and potatoes with rich peanut sauce.",
+ ing:["200 g firm tofu, cubed & fried","3 boiled potatoes, sliced","4 hard-boiled eggs","Green beans, cabbage, bean sprouts (blanched)","Cucumber","Peanut sauce: 150 g peanut butter, 2 garlic cloves, 1 chili, 2 tbsp kecap manis (GF version), 1 tbsp lime juice, 1 tsp sugar, 200 ml hot water","Fried shallots, rice crackers"],
+ steps:["Blanch green beans, cabbage and sprouts; plunge into cold water.","Fry tofu cubes until golden.","Blend or whisk peanut sauce ingredients until smooth and pourable.","Arrange vegetables, potatoes, tofu and eggs on a platter.","Pour peanut sauce over; top with fried shallots and crackers."],
+ tip:"Skip the eggs for a fully vegan version."},
+// ---------- PERSIAN ----------
+{c:"Persian",n:"Joojeh Kabab (Saffron Chicken)",e:"🍢",t:40,d:"Easy",s:4,p:25,tags:["gf"],
+ desc:"Golden saffron-lemon chicken kebabs served with buttery rice and grilled tomatoes.",
+ ing:["800 g boneless chicken thigh/breast, chunks","1 large onion, grated","½ tsp saffron, ground & bloomed in 3 tbsp hot water","Juice of 2 lemons","3 tbsp yogurt, 3 tbsp olive oil","Salt & pepper","4 tomatoes for grilling","Butter, 400 g basmati rice, sumac"],
+ steps:["Mix onion, half the saffron water, lemon, yogurt, oil and salt. Marinate chicken 2+ hours.","Thread onto skewers, with tomatoes on separate skewers.","Grill over high heat 10–12 min, turning, until charred and cooked.","Brush with remaining saffron water mixed with melted butter.","Serve with rice, grilled tomatoes and a sprinkle of sumac."],
+ tip:"Grind saffron with a pinch of sugar for maximum color and aroma. Persian grocers sell it far cheaper than supermarkets."},
+{c:"Persian",n:"Ghormeh Sabzi",e:"🌿",t:150,d:"Medium",s:6,p:28,tags:["gf"],
+ desc:"Iran's beloved herb stew with lamb, kidney beans and tangy dried limes.",
+ ing:["600 g lamb or beef stew meat","4 cups mixed herbs, finely chopped (parsley, cilantro, chives/leeks, ¼ cup dried fenugreek leaves)","540 ml can kidney beans","1 onion, chopped","4 dried limes (limoo omani), pierced","1 tsp turmeric","1 L water","500 g basmati rice to serve"],
+ steps:["Brown onion in oil, add turmeric, then brown the meat.","Add water and simmer covered 1 hour.","Meanwhile, fry herbs in oil 15–20 min until dark green and fragrant (key step!).","Add herbs, dried limes and beans to meat; simmer 1 hour more.","Season and serve with fluffy saffron rice and tahdig."],
+ tip:"Persian grocers sell pre-chopped frozen ghormeh sabzi herb mix, which saves time and money."},
+// ---------- BRITISH ----------
+{c:"British",n:"Fish and Chips",e:"🐟",t:60,d:"Medium",s:4,p:30,tags:[],
+ desc:"Crispy battered cod with thick-cut chips, mushy peas and tartar sauce. Alcohol-free batter.",
+ ing:["4 cod or haddock fillets (about 600 g)","1 kg russet potatoes, cut into thick chips","200 g flour + 1 tsp baking powder","300 ml ice-cold sparkling water (replaces beer)","Oil for deep frying (about 2 L)","Tartar sauce, lemon, white vinegar","Frozen peas for mushy peas (optional)"],
+ steps:["Rinse and dry chips. Fry at 130°C / 265°F for 8–10 min until soft but pale; drain.","Whisk flour, baking powder, salt and ice-cold sparkling water into a smooth batter.","Raise oil to 180°C / 350°F. Dust fish in flour, dip in batter, and fry 6–8 min until golden.","Fry chips again at 180°C for 3–4 min until crisp.","Salt immediately and serve with lemon, vinegar and tartar sauce."],
+ tip:"Ice-cold sparkling water gives the same light, crisp batter as beer. Double-frying the chips gives fluffy insides and crisp outsides."},
+{c:"British",n:"Shepherd's Pie",e:"🥧",t:75,d:"Easy",s:6,p:22,tags:["gf"],
+ desc:"Savory minced lamb and vegetables under a fluffy, golden mashed potato crust.",
+ ing:["700 g ground lamb (beef = cottage pie)","1 onion, 2 carrots, 2 celery stalks, diced","2 tbsp tomato paste","1 tbsp Worcestershire sauce (check halal & GF label)","300 ml beef stock","Thyme, rosemary","100 g peas","1 kg potatoes","50 g butter, 100 ml milk, 50 g cheddar"],
+ steps:["Boil potatoes until tender; mash with butter, milk and salt.","Brown lamb; remove excess fat. Add vegetables and cook 8 min.","Stir in tomato paste, Worcestershire, herbs and stock; simmer 15 min. Add peas.","Spread filling in a baking dish; top with mash and rough up with a fork. Sprinkle cheese.","Bake at 200°C / 400°F for 25 min until golden."],
+ tip:"Let it rest 10 min before serving so it holds together."},
+// ---------- NIGERIAN ----------
+{c:"Nigerian",n:"Jollof Rice",e:"🍚",t:60,d:"Medium",s:6,p:13,tags:["veg","vegan","gf"],
+ desc:"West Africa's iconic smoky, spicy tomato rice, the star of every party.",
+ ing:["500 g long-grain parboiled rice, rinsed","Blend: 4 tomatoes, 2 red bell peppers, 1 Scotch bonnet, 1 onion","1 onion, sliced","3 tbsp tomato paste","100 ml vegetable oil","2 tsp curry powder, 1 tsp dried thyme, 2 bay leaves","500 ml vegetable stock","Salt / vegetable bouillon to taste"],
+ steps:["Blend tomatoes, peppers, Scotch bonnet and onion; reduce in a pot 15 min until thick.","Fry sliced onion in oil, add tomato paste and fry 5 min until darkened.","Add reduced pepper base, curry, thyme, bay; fry 10 min until oil rises to the top.","Add rice and stock; stir once, cover tightly with foil + lid.","Cook on low 30 min until tender. Let the bottom catch slightly for the smoky 'party' flavor."],
+ tip:"Serve alongside fried plantain and grilled chicken or suya."},
+{c:"Nigerian",n:"Beef Suya",e:"🔥",t:35,d:"Easy",s:4,p:22,tags:["gf"],
+ desc:"Smoky Nigerian street-food skewers coated in spicy peanut yaji spice.",
+ ing:["600 g beef sirloin, thinly sliced","Yaji spice: 60 g roasted peanuts (ground), 1 tbsp paprika, 1 tsp cayenne, 1 tsp ginger, 1 tsp garlic powder, 1 tsp onion powder, 1 bouillon cube, salt","3 tbsp oil","Sliced red onion, tomato, cabbage to serve"],
+ steps:["Mix all yaji spice ingredients.","Toss beef with oil and a generous half of the spice; marinate 30 min+.","Thread onto skewers.","Grill or broil over high heat 3–4 min per side.","Sprinkle with more yaji and serve with onion, tomato and cabbage."],
+ tip:"Grind peanuts to a fine powder (stop before it becomes butter!)."}
+];
+
+// ---------- State ----------
+let state = { q:"", time:999, budget:999, sort:"cuisine", diets:new Set(), cuisines:new Set() };
+let favs = new Set(JSON.parse(localStorage.getItem("dinnerFavs")||"[]"));
+const $ = id => document.getElementById(id);
+const cad = n => "$" + n.toFixed(2);
+const perServing = r => r.p / r.s;
+
+const cuisineList = [...new Set(RECIPES.map(r=>r.c))].sort();
+$("cuisineChips").innerHTML = `<span class="chip on" data-c="ALL">🌍 All</span>` +
+  cuisineList.map(c=>`<span class="chip" data-c="${c}">${CUISINES[c]||"🍴"} ${c}</span>`).join("");
+
+function filtered(){
+  const q = state.q.toLowerCase().trim();
+  let list = RECIPES.filter(r=>{
+    if(r.t > state.time) return false;
+    if(perServing(r) > state.budget) return false;
+    if(state.cuisines.size && !state.cuisines.has(r.c)) return false;
+    for(const d of state.diets){
+      if(d==="fav"){ if(!favs.has(r.n)) return false; }
+      else if(d==="nosf"){ if(r.tags.includes("sf")) return false; }
+      else if(!r.tags.includes(d)) return false;
+    }
+    if(q){
+      const hay = (r.n+" "+r.c+" "+r.desc+" "+r.ing.join(" ")).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+  const s = state.sort;
+  list.sort((a,b)=> s==="time" ? a.t-b.t : s==="cost" ? perServing(a)-perServing(b) :
+    s==="name" ? a.n.localeCompare(b.n) : a.c.localeCompare(b.c)||a.n.localeCompare(b.n));
+  return list;
+}
+
+const fmtTime = m => m>=60 ? `${Math.floor(m/60)}h${m%60?" "+(m%60)+"m":""}` : `${m} min`;
+const TAGNAMES = {veg:"Vegetarian",vegan:"Vegan",gf:"Gluten-Free",sf:"🦐 Contains shellfish"};
+const tagHTML = r => r.tags.map(t=>`<span class="tag ${t}">${TAGNAMES[t]}</span>`).join("");
+
+function halalNotes(r){
+  const t = r.ing.join(" ").toLowerCase(), n = [];
+  if(/chicken|beef|lamb|veal|meat/.test(t)) n.push("Buy halal-certified (zabiha) meat or poultry.");
+  if(/stock|bouillon|dashi/.test(t)) n.push("Use halal-certified or vegetable stock/bouillon. Many regular meat broths aren't halal.");
+  if(/cheese|parmesan|feta|mozzarella|cheddar|gruy|emmental|cotija/.test(t)) n.push("If you avoid animal rennet, choose cheese made with microbial/vegetable rennet.");
+  if(/soy sauce|tamari|kecap|doubanjiang|oyster sauce|worcestershire|mustard|gochujang|curry paste/.test(t)) n.push("Check sauce labels for added alcohol, or buy halal-certified brands.");
+  if(r.tags.includes("sf")) n.push("Contains shellfish, which some schools (e.g., Hanafi) avoid. See the tip for a substitute.");
+  return n;
+}
+
+function render(){
+  const list = filtered();
+  $("count").textContent = `Showing ${list.length} of ${RECIPES.length} halal recipes from ${cuisineList.length} cuisines`;
+  if(!list.length){ $("grid").innerHTML = `<div class="empty" style="grid-column:1/-1">😕 No recipes match. Try loosening your filters!</div>`; return; }
+  $("grid").innerHTML = list.map(r=>`
+    <div class="card" data-n="${r.n}">
+      <button class="fav ${favs.has(r.n)?"on":""}" data-fav="${r.n}" title="Favorite">❤️</button>
+      <div class="top">${r.e}</div>
+      <div class="body">
+        <div class="cuisine">${CUISINES[r.c]} ${r.c}</div>
+        <h3>${r.n}</h3>
+        <div class="desc">${r.desc}</div>
+        <div class="meta"><span class="tag cost">💲 ${cad(perServing(r))}/serving</span><span class="tag">⏱ ${fmtTime(r.t)}</span><span class="tag">📊 ${r.d}</span>${tagHTML(r)}</div>
+      </div>
+    </div>`).join("");
+}
+
+function openRecipe(name){
+  const r = RECIPES.find(x=>x.n===name); if(!r) return;
+  const notes = halalNotes(r);
+  $("modal").innerHTML = `
+    <div class="mhead">
+      <button class="close" id="closeBtn">✕</button>
+      <div class="emoji">${r.e}</div>
+      <div class="cuisine" style="color:var(--accent);font-weight:700">${CUISINES[r.c]} ${r.c} Cuisine</div>
+      <h2>${r.n}</h2>
+      <p style="color:var(--muted);margin-top:6px">${r.desc}</p>
+      <div class="meta" style="margin-top:10px">
+        <span class="tag cost">💲 ~${cad(r.p)} CAD total</span><span class="tag cost">${cad(perServing(r))} / serving</span>
+        <span class="tag">⏱ ${fmtTime(r.t)}</span><span class="tag">📊 ${r.d}</span><span class="tag">🍽 Serves ${r.s}</span>${tagHTML(r)}
+      </div>
+    </div>
+    <div class="mbody">
+      <h4>🛒 Ingredients</h4>
+      <div class="ing">${r.ing.map(i=>`<label><input type="checkbox"><span>${i}</span></label>`).join("")}</div>
+      <p class="costnote">💲 Estimated cost of the amounts used, at typical 2024–25 Canadian grocery prices (halal meat prices included). Buying a full jar or bag of a spice or sauce for the first time will cost more upfront.</p>
+      <h4>👩‍🍳 Instructions</h4>
+      <ol class="steps">${r.steps.map(s=>`<li>${s}</li>`).join("")}</ol>
+      ${r.tip?`<div class="tip">💡 <strong>Tip:</strong> ${r.tip}</div>`:""}
+      ${notes.length?`<div class="halal">☪️ <strong>Halal notes:</strong><ul>${notes.map(x=>`<li>${x}</li>`).join("")}</ul></div>`:""}
+      <div class="mactions">
+        <button class="btn primary" id="favBtn">${favs.has(r.n)?"💔 Remove Favorite":"❤️ Save to Favorites"}</button>
+        <button class="btn ghost" id="anotherBtn">🎲 Pick Another</button>
+        <button class="btn ghost" onclick="window.print()">🖨 Print</button>
+      </div>
+    </div>`;
+  $("overlay").classList.add("show");
+  document.body.style.overflow="hidden";
+  $("closeBtn").onclick = closeModal;
+  $("favBtn").onclick = ()=>{ toggleFav(r.n); openRecipe(r.n); };
+  $("anotherBtn").onclick = ()=>{ closeModal(); decide(); };
+  $("modal").querySelectorAll(".steps li").forEach(li=>li.onclick=()=>li.classList.toggle("done"));
+}
+function closeModal(){ $("overlay").classList.remove("show"); document.body.style.overflow=""; }
+function toggleFav(n){ favs.has(n)?favs.delete(n):favs.add(n); localStorage.setItem("dinnerFavs",JSON.stringify([...favs])); render(); }
+
+let spinning=false;
+function decide(){
+  if(spinning) return;
+  let pool = filtered(); if(!pool.length) pool = RECIPES;
+  spinning=true; let i=0; const total=18;
+  const tick=()=>{
+    const r = pool[Math.floor(Math.random()*pool.length)];
+    $("roulette").textContent = `${r.e} ${r.n}`;
+    if(++i<total) setTimeout(tick, 40+i*12);
+    else { spinning=false; $("roulette").textContent = `✨ Tonight: ${r.e} ${r.n} ${CUISINES[r.c]} (~${cad(perServing(r))}/serving)`; openRecipe(r.n); }
+  };
+  tick();
+}
+
+$("search").oninput = e=>{ state.q=e.target.value; render(); };
+$("timeFilter").onchange = e=>{ state.time=+e.target.value; render(); };
+$("budgetFilter").onchange = e=>{ state.budget=+e.target.value; render(); };
+$("sortBy").onchange = e=>{ state.sort=e.target.value; render(); };
+$("decideBtn").onclick = decide;
+$("dietChips").onclick = e=>{
+  const c=e.target.closest(".chip"); if(!c) return;
+  const d=c.dataset.diet; state.diets.has(d)?state.diets.delete(d):state.diets.add(d);
+  c.classList.toggle("on"); render();
+};
+$("cuisineChips").onclick = e=>{
+  const c=e.target.closest(".chip"); if(!c) return;
+  const v=c.dataset.c, all=$("cuisineChips").querySelector('[data-c="ALL"]');
+  if(v==="ALL"){ state.cuisines.clear(); $("cuisineChips").querySelectorAll(".chip").forEach(x=>x.classList.remove("on")); all.classList.add("on"); }
+  else{
+    state.cuisines.has(v)?state.cuisines.delete(v):state.cuisines.add(v);
+    c.classList.toggle("on"); all.classList.toggle("on", state.cuisines.size===0);
+  }
+  render();
+};
+$("grid").onclick = e=>{
+  const f=e.target.closest("[data-fav]"); if(f){ e.stopPropagation(); toggleFav(f.dataset.fav); return; }
+  const card=e.target.closest(".card"); if(card) openRecipe(card.dataset.n);
+};
+$("overlay").onclick = e=>{ if(e.target.id==="overlay") closeModal(); };
+document.addEventListener("keydown", e=>{ if(e.key==="Escape") closeModal(); });
+
+render();
+</script>
+</body>
+</html>
